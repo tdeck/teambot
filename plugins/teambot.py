@@ -35,9 +35,12 @@ def process_message(data):
         handle_direct_message(channel_id, data)
 
 def handle_direct_message(dm_channel_id, data):
-    text = data['text']
-    if text.strip() == 'help':
+    text = data['text'].strip()
+    if text == 'help':
         return send_help_text(dm_channel_id)
+    elif text == 'list-all': # Secret!
+        return send(dm_channel_id,
+            'Teams:' + (' <#{}>' * len(directory)).format(*directory.keys()))
 
     # Accept messages of the form "command #channel [@user...]"
     match = re.match('\s*(?P<cmd>\w+)\s+<#(?P<channel>C\w+)>(?P<people>(\s+<@U\w+>)*)\s*', text)
@@ -136,7 +139,7 @@ def handle_channel_message(channel_id, data):
     text = data['text']
 
     if my_mention in text and str(channel_id) in directory:
-        team_members = directory[str(channel_id)]
+        team_members = directory[str(channel_id)] - set([data['user']])
         send(
             channel_id,
             '^' + (' <@{}>' * len(team_members)).format(*team_members)
