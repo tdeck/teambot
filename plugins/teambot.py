@@ -43,7 +43,7 @@ def handle_direct_message(dm_channel_id, data):
             'Teams:' + (' <#{}>' * len(directory)).format(*directory.keys()))
 
     # Accept messages of the form "command #channel [@user...]"
-    match = re.match('\s*(?P<cmd>\w+)\s+<#(?P<channel>C\w+)>(?P<people>(\s+<@U\w+>)*)\s*', text)
+    match = re.match('^(?P<cmd>\w+)\s+<#(?P<channel>C\w+)>(?P<people>(\s+<@U\w+>)*)$', text)
     if not match:
         send(dm_channel_id, "I didn't recognize that command.")
         send_help_text(dm_channel_id)
@@ -162,9 +162,9 @@ HELP_TEXT = \
 '''Here are the commands I understand:
 ```
 info #channel                           - get team info about #channel
-create #channel [@person1 @person2...]  - create a team for #channel and add @person1 and @person2
-add #channel [@person3 @person4...]     - add @person3 and @person4 to the team for #channel
-remove #channel [@person1 @person2...]  - remove @person1 and @person2 from the team for #channel
+create #channel @person1 @person2...    - create a team for #channel and add @person1 and @person2
+add #channel @person3 @person4...       - add @person3 and @person4 to the team for #channel
+remove #channel @person1 @person2...    - remove @person1 and @person2 from the team for #channel
 join #channel                           - add yourself to the team for #channel
 leave #channel                          - remove yourself from the team for #channel
 drop #channel                           - drop the team record for #channel```'''
