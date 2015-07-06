@@ -74,12 +74,12 @@ class RtmBot(object):
             logging.info(plugin)
             name = plugin.split('/')[-1][:-3]
 #            try:
-            self.bot_plugins.append(Plugin(name))
+            self.bot_plugins.append(Plugin(name, self))
 #            except:
 #                print "error loading plugin %s" % name
 
 class Plugin(object):
-    def __init__(self, name, plugin_config={}):
+    def __init__(self, name, bot, plugin_config={}):
         self.name = name
         self.jobs = []
         self.module = __import__(name)
@@ -89,7 +89,7 @@ class Plugin(object):
             logging.info("config found for: " + name)
             self.module.config = config[name]
         if 'setup' in dir(self.module):
-            self.module.setup()
+            self.module.setup(bot)
     def register_jobs(self):
         if 'crontable' in dir(self.module):
             for interval, function in self.module.crontable:

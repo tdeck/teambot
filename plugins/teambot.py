@@ -1,16 +1,23 @@
 import shelve
 import re
-import textwrap
+import json
 
-# This directory maps slack channel IDs (not names) to sets of user IDs 
+# This directory maps slack channel IDs (not names) to sets of user IDs
 directory = shelve.open('teams.db')
 
 outputs = []
-my_user_id = u'U076D8856'
-my_mention = '<@{}>'.format(my_user_id)
+my_user_id = None
+my_mention = None
+slack_client = None
 
-def setup():
-    # TODO get my user ID
+def setup(bot):
+    global my_user_id
+    global my_mention
+    global slack_client
+    slack_client = bot.slack_client
+
+    my_user_id = slack_client.server.login_data['self']['id']
+    my_mention = '<@{}>'.format(my_user_id)
 
     for channel_id in directory.keys():
         join_channel(channel_id)
@@ -54,65 +61,76 @@ def handle_direct_message(dm_channel_id, data):
             return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
 
         send(
-            dm_channel_id, 
+            dm_channel_id,
             'Team members for <#{0}>:'.format(team_channel_id) +
                 (' <@{}>' * len(team_members)).format(*team_members)
         )
 
-    elif cmd == 'create':
-        if team_members is not None:
-            return send(dm_channel_id, 'That team already exists.')
-
-        directory[team_channel_id] = people
-        # TODO join the channel
-
-        send(dm_channel_id, 'Team <#{}> created.'.format(team_channel_id))
-
-    elif cmd == 'add':
-        if team_members is None:
-            return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
-
-        directory[team_channel_id] = team_members | people
-
-        send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
-
-    elif cmd == 'join':
-        if team_members is None:
-            return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
-
-        team_members.add(data['user'])
-        directory[team_channel_id] = team_members
-
-        send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
-
-    elif cmd == 'remove':
-        if team_members is None:
-            return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
-
-        directory[team_channel_id] = team_members.difference(people)
-
-        send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
-
-    elif cmd == 'leave':
-        if team_members is None:
-            return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
-
-        team_members.discard(data['user'])
-        directory[team_channel_id] = team_members
-
-        send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
-
-    elif cmd == 'drop':
-        if team_members is None:
-            return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
-
-        del directory[team_channel_id] 
-
-        send(dm_channel_id, 'Team <#{}> deleted.'.format(team_channel_id))
-
     else:
-        send(dm_channel_id, "I didn't recognize that command.")
-        send_help_text(dm_channel_id)
+        if not in_channel(team_channel_id):
+            # TODO remove this garbage if Slack ever lets bots join channels
+            return send(
+                dm_channel_id,
+                'You must invite {} to <#{}> before you can manage team records.'.format(
+                    my_mention,
+                    team_channel_id
+                )
+            )
+
+        if cmd == 'create':
+            if team_members is not None:
+                return send(dm_channel_id, 'That team already exists.')
+
+            directory[team_channel_id] = people
+            join_channel(team_channel_id)
+
+            send(dm_channel_id, 'Team <#{}> created.'.format(team_channel_id))
+
+        elif cmd == 'add':
+            if team_members is None:
+                return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
+
+            directory[team_channel_id] = team_members | people
+
+            send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
+
+        elif cmd == 'join':
+            if team_members is None:
+                return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
+
+            team_members.add(data['user'])
+            directory[team_channel_id] = team_members
+
+            send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
+
+        elif cmd == 'remove':
+            if team_members is None:
+                return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
+
+            directory[team_channel_id] = team_members.difference(people)
+
+            send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
+
+        elif cmd == 'leave':
+            if team_members is None:
+                return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
+
+            team_members.discard(data['user'])
+            directory[team_channel_id] = team_members
+
+            send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
+
+        elif cmd == 'drop':
+            if team_members is None:
+                return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
+
+            del directory[team_channel_id]
+
+            send(dm_channel_id, 'Team <#{}> deleted.'.format(team_channel_id))
+
+        else:
+            send(dm_channel_id, "I didn't recognize that command.")
+            send_help_text(dm_channel_id)
 
 def handle_channel_message(channel_id, data):
     text = data['text']
@@ -124,8 +142,12 @@ def handle_channel_message(channel_id, data):
             '^' + (' <@{}>' * len(team_members)).format(*team_members)
         )
 
+def in_channel(channel_id):
+    channel_info = json.loads(slack_client.api_call('channels.info', channel=channel_id))
+    return my_user_id in channel_info['channel']['members']
+
 def join_channel(channel_id):
-    
+    pass # We can't join channels!
 
 def send(channel_id, message):
     outputs.append([channel_id, message])
