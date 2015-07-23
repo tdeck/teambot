@@ -3,6 +3,7 @@ teambot
 A bot to help team-based Slack channels.
 
 Have you ever:
+
 - Wanted to notify your team in your Slack channel without pinging the other 80 people hanging out in your room?
 - Wanted to get help in another team's channel and not known who to ask?
 
