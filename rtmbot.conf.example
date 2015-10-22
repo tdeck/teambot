@@ -1,0 +1,3 @@
+DEBUG: True
+
+SLACK_TOKEN: "<your-token-here>"

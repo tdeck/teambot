@@ -1,13 +1,28 @@
 teambot
 =======
-A bot to help team-based Slack channels.
+A bot to create per-channel notification lists in Slack.
 
-Have you ever:
+At Square, we have a lot of teams that make heavy use of slack. Each team owns a few different services, so people might hang around in the team's channel to get updates or ask questions. However, this makes it difficult to use @channel or @here to contact just your team.
+By setting up teambot as a bot whose name is "team", you can notify your team with @team.
 
-- Wanted to notify your team in your Slack channel without pinging the other 80 people hanging out in your room?
-- Wanted to get help in another team's channel and not known who to ask?
+Teambot is my personal project. **We have been using it at Square for three months. At last count, 39 teams are using teambot.** Despite its simplicity, it has only broken once during a slack outage. I tend to just forget it's running.
 
-Teambot is here to help. It allows you to designate a core group of people for each channel that corresponds to that channel's team. Then, when you add @team to a message in that channel, teambot will post a notification to those people. This is a simple but useful feature that's missing from vanilla Slack.
+Setting up the bot
+------------------
+Teambot requires Python and virtualenv.
+
+1.
+Install the bot and its dependencies:
+```shell
+$ git clone https://github.com/tdeck/teambot.git
+$ cd teambot
+$ pip env
+$ . env/bin/activate
+$ pip install -r requirements.txt
+```
+2. Obtain a token for your slack bot (see the [Slack documentation](https://api.slack.com/getting-started)). I recommend naming it "team".
+3. Create a configuration file. One simple way is to `cp rtmbot.conf.example rtmbot.conf`, then edit rtmbot.conf and replace `<your-token-here>` with the bot's token from your Slack dashboard.
+4. That's it. Start the bot with `python rtmbot.py`.
 
 Setting up a team
 -----------------
@@ -19,7 +34,7 @@ Team management is simple, and anyone can do it by direct-messaging @team in sla
 /msg @team create #xp @jackson @amberdixon @tp @bhartard @dan @killpack @glenn @scottsilver @jess @tdeck @barlow
 ```
 
-Then Curtis, a new intern, joins your XP. You can either ask him to run `/msg @team join #xp`, or run `/msg @team add #xp @curtisf`.
+Then Curtis, a new intern, joins your XP team. You can either ask him to run `/msg @team join #xp`, or run `/msg @team add #xp @curtisf`.
 
 Similarly, if Jess gets tired of being notified about every deploy, she can `/msg @team leave #xp`, or you can take her off the list with `/msg @team remove #xp @jess`.
 
