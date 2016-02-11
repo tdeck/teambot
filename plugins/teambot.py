@@ -1,6 +1,7 @@
 import shelve
 import re
 import json
+import atexit
 
 # This directory maps slack channel IDs (not names) to sets of user IDs
 directory = shelve.open('teams.db')
@@ -86,6 +87,7 @@ def handle_direct_message(dm_channel_id, data):
 
             directory[team_channel_id] = people
             join_channel(team_channel_id)
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> created.'.format(team_channel_id))
 
@@ -94,6 +96,7 @@ def handle_direct_message(dm_channel_id, data):
                 return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
 
             directory[team_channel_id] = team_members | people
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
 
@@ -103,6 +106,7 @@ def handle_direct_message(dm_channel_id, data):
 
             team_members.add(data['user'])
             directory[team_channel_id] = team_members
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
 
@@ -111,6 +115,7 @@ def handle_direct_message(dm_channel_id, data):
                 return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
 
             directory[team_channel_id] = team_members.difference(people)
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
 
@@ -120,6 +125,7 @@ def handle_direct_message(dm_channel_id, data):
 
             team_members.discard(data['user'])
             directory[team_channel_id] = team_members
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> updated.'.format(team_channel_id))
 
@@ -128,6 +134,7 @@ def handle_direct_message(dm_channel_id, data):
                 return send(dm_channel_id, 'No team record for <#{}>'.format(team_channel_id))
 
             del directory[team_channel_id]
+            directory.sync()
 
             send(dm_channel_id, 'Team <#{}> deleted.'.format(team_channel_id))
 
@@ -157,6 +164,8 @@ def send(channel_id, message):
 
 def send_help_text(channel_id):
     send(channel_id, HELP_TEXT)
+
+atexit.register(directory.close)
 
 HELP_TEXT = \
 '''Here are the commands I understand:
