@@ -39,9 +39,18 @@ def handle_direct_message(dm_channel_id, data):
     text = data['text'].strip()
     if text == 'help':
         return send_help_text(dm_channel_id)
+    elif text == 'stats': # Secret!
+        user_count = len(set((uid for uids in directory.values() for uid in uids)))
+	return send(dm_channel_id, '{} distinct users in {} teams'.format(user_count, len(directory)))
     elif text == 'list-all': # Secret!
         return send(dm_channel_id,
-            'Teams:' + (' <#{}>' * len(directory)).format(*directory.keys()))
+            "\n".join(
+                (
+                    '<#{}>: {}'.format(channel, ' <@{}>' * len(team_members)).format(*team_members)
+                    for channel, team_members in directory.iteritems()
+                )
+            )
+        )
 
     # Accept messages of the form "command #channel [@user...]"
     match = re.match('^(?P<cmd>\w+)\s+<#(?P<channel>C\w+)>(?P<people>(\s+<@U\w+>)*)$', text)
