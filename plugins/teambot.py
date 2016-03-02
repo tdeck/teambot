@@ -154,7 +154,15 @@ def handle_direct_message(dm_channel_id, data):
 def handle_channel_message(channel_id, data):
     text = data['text']
 
-    if my_mention in text and str(channel_id) in directory:
+    if my_mention in text:
+        # Sanity check; in case they haven't created a team
+        if str(channel_id) not in directory:
+            send(channel_id, 
+                "There is no team record for this channel.\n" +
+                'PM `help` to {} for more information.'.format(my_mention)
+            )
+            return
+
         team_members = directory[str(channel_id)] - set([data['user']])
         send(
             channel_id,
