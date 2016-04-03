@@ -1,3 +1,7 @@
+# This file contains the actual app logic for teambot. The rtmbot
+# framework calls into it by invoking setup() and process_message(),
+# and will send any messages queued up in the outputs list.
+
 import shelve
 import re
 import json
@@ -7,18 +11,18 @@ import atexit
 directory = shelve.open('teams.db')
 
 outputs = []
+my_name = None
 my_user_id = None
-my_mention = None
 slack_client = None
 
 def setup(bot):
+    global my_name
     global my_user_id
-    global my_mention
     global slack_client
     slack_client = bot.slack_client
 
     my_user_id = slack_client.server.login_data['self']['id']
-    my_mention = '<@{}>'.format(my_user_id)
+    my_name = slack_client.server.login_data['self']['name']
 
 def process_message(data):
     # Ignore joins, leaves, typing notifications, etc... and messages from me
@@ -81,8 +85,8 @@ def handle_direct_message(dm_channel_id, data):
             # TODO just join the channel if Slack ever allows it
             return send(
                 dm_channel_id,
-                'You must invite {} to <#{}> before you can manage team records.'.format(
-                    my_mention,
+                'You must invite <@{}> to <#{}> before you can manage team records.'.format(
+                    my_user_id,
                     team_channel_id
                 )
             )
@@ -150,12 +154,12 @@ def handle_direct_message(dm_channel_id, data):
 def handle_channel_message(channel_id, data):
     text = data['text']
 
-    if my_mention in text:
+    if mentions_me(text):
         # Sanity check; in case they haven't created a team
         if str(channel_id) not in directory:
             send(channel_id,
                 "There is no team record for this channel.\n" +
-                'PM `help` to {} for more information.'.format(my_mention)
+                'PM `help` to <@{}> for more information.'.format(my_user_id)
             )
             return
 
@@ -168,6 +172,14 @@ def handle_channel_message(channel_id, data):
 def in_channel(channel_id):
     channel_info = slack_client.api_call('channels.info', channel=channel_id)
     return my_user_id in channel_info['channel']['members']
+
+def mentions_me(message_text):
+    # Some clients (i.e. slackbot) appear to format the mentions as
+    # "<@USERID|username>" rather than "<@USERID>"
+    return (
+        '<@{}>'.format(my_user_id) in message_text or
+        ('<@{}|{}>'.format(my_user_id, my_name) in message_text)
+    )
 
 def send(channel_id, message):
     outputs.append([channel_id, message])
