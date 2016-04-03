@@ -170,7 +170,7 @@ class UnknownChannel(Exception):
 def main_loop():
     logging_conf = {
         'level': logging.INFO,
-        'format': '%(asctime)s %(message)s',
+        'format': '%(levelname)s - %(filename)s:%(lineno)d - %(message)s',
         'handlers': [logging.StreamHandler()],
     }
     if "LOGFILE" in config:
