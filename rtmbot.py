@@ -168,8 +168,16 @@ class UnknownChannel(Exception):
 
 
 def main_loop():
+    logging_conf = {
+        'level': logging.INFO,
+        'format': '%(asctime)s %(message)s',
+        'handlers': [logging.StreamHandler()],
+    }
     if "LOGFILE" in config:
-        logging.basicConfig(filename=config["LOGFILE"], level=logging.INFO, format='%(asctime)s %(message)s')
+        logging_conf.update({
+            'filename': config["LOGFILE"],
+        })
+    logging.basicConfig(**logging_conf)
     logging.info(directory)
     try:
         bot.start()
