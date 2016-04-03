@@ -41,7 +41,8 @@ def handle_direct_message(dm_channel_id, data):
         return send_help_text(dm_channel_id)
     elif text == 'stats': # Secret!
         user_count = len(set((uid for uids in directory.values() for uid in uids)))
-	return send(dm_channel_id, '{} distinct users in {} teams'.format(user_count, len(directory)))
+        return send(dm_channel_id, '{} distinct users in {} teams'.format(user_count, len(directory)))
+
     elif text == 'list-all': # Secret!
         return send(dm_channel_id,
             "\n".join(
