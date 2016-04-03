@@ -39,11 +39,10 @@ def handle_direct_message(dm_channel_id, data):
     text = data['text'].strip()
     if text == 'help':
         return send_help_text(dm_channel_id)
-    elif text == 'stats': # Secret!
+    elif text == 'stats':
         user_count = len(set((uid for uids in directory.values() for uid in uids)))
         return send(dm_channel_id, '{} distinct users in {} teams'.format(user_count, len(directory)))
-
-    elif text == 'list-all': # Secret!
+    elif text == 'list-all':
         return send(dm_channel_id,
             "\n".join(
                 (
@@ -158,7 +157,7 @@ def handle_channel_message(channel_id, data):
     if my_mention in text:
         # Sanity check; in case they haven't created a team
         if str(channel_id) not in directory:
-            send(channel_id, 
+            send(channel_id,
                 "There is no team record for this channel.\n" +
                 'PM `help` to {} for more information.'.format(my_mention)
             )
@@ -171,7 +170,7 @@ def handle_channel_message(channel_id, data):
         )
 
 def in_channel(channel_id):
-    channel_info = json.loads(slack_client.api_call('channels.info', channel=channel_id))
+    channel_info = slack_client.api_call('channels.info', channel=channel_id)
     return my_user_id in channel_info['channel']['members']
 
 def join_channel(channel_id):
@@ -194,4 +193,7 @@ add #channel @person3 @person4...       - add @person3 and @person4 to the team 
 remove #channel @person1 @person2...    - remove @person1 and @person2 from the team for #channel
 join #channel                           - add yourself to the team for #channel
 leave #channel                          - remove yourself from the team for #channel
-drop #channel                           - drop the team record for #channel```'''
+drop #channel                           - drop the team record for #channel
+list-all                                - list all registered teams
+stats                                   - get slackbot team statistics
+help                                    - this help```'''

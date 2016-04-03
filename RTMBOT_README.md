@@ -28,7 +28,7 @@ Some differences to webhooks:
         pip install -r requirements.txt
 
 3. Configure rtmbot (https://api.slack.com/bot-users)
-        
+
         cp doc/example-config/rtmbot.conf .
         vi rtmbot.conf
           SLACK_TOKEN: "xoxb-11111111111-222222222222222"
@@ -73,7 +73,7 @@ that writes "hello world" when the plugin is started:
 
     outputs = []
     outputs.append(["C12345667", "hello world"])
-        
+
 *Note*: you should always create the outputs array at the start of your program, i.e. ```outputs = []```
 
 ### Timed jobs

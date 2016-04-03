@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# This code is mostly from the rtmbot project; it handles the lower-level
+# details of interacting with the Slack socket API, and imports the bot
+# logic from teambot.py. It is also the application entry point.
+
 import sys
 sys.dont_write_bytecode = True
 
@@ -13,6 +17,8 @@ import logging
 from argparse import ArgumentParser
 
 from slackclient import SlackClient
+
+import teambot
 
 def dbg(debug_string):
     if debug:
@@ -36,7 +42,6 @@ class RtmBot(object):
         while True:
             for reply in self.slack_client.rtm_read():
                 self.input(reply)
-            self.crons()
             self.output()
             self.autoping()
             time.sleep(.1)
@@ -53,7 +58,6 @@ class RtmBot(object):
             function_name = "process_" + data["type"]
             dbg("got {}".format(function_name))
             for plugin in self.bot_plugins:
-                plugin.register_jobs()
                 plugin.do(function_name, data)
 
     def output(self):
@@ -69,44 +73,21 @@ class RtmBot(object):
                     channel.send_message("{}".format(message))
                     limiter = True
 
-    def crons(self):
-        for plugin in self.bot_plugins:
-            plugin.do_jobs()
-
     def load_plugins(self):
-        for plugin in glob.glob(directory+'/plugins/*'):
-            sys.path.insert(0, plugin)
-            sys.path.insert(0, directory+'/plugins/')
-        for plugin in glob.glob(directory+'/plugins/*.py') + glob.glob(directory+'/plugins/*/*.py'):
-            logging.info(plugin)
-            name = plugin.split('/')[-1][:-3]
-#            try:
-            self.bot_plugins.append(Plugin(name, self))
-#            except:
-#                print "error loading plugin %s" % name
-
+        self.bot_plugins.append(Plugin(teambot, self))
 
 class Plugin(object):
-    def __init__(self, name, bot, plugin_config={}):
+    def __init__(self, module, bot):
+        self.module = module
+        name = module.__name__
         self.name = name
-        self.jobs = []
-        self.module = __import__(name)
-        self.register_jobs()
+
         self.outputs = []
         if name in config:
             logging.info("config found for: " + name)
             self.module.config = config[name]
         if 'setup' in dir(self.module):
             self.module.setup(bot)
-
-    def register_jobs(self):
-        if 'crontable' in dir(self.module):
-            for interval, function in self.module.crontable:
-                self.jobs.append(Job(interval, eval("self.module."+function)))
-            logging.info(self.module.crontable)
-            self.module.crontable = []
-        else:
-            self.module.crontable = []
 
     def do(self, function_name, data):
         if function_name in dir(self.module):
@@ -125,10 +106,6 @@ class Plugin(object):
             except:
                 dbg("problem in catch all")
 
-    def do_jobs(self):
-        for job in self.jobs:
-            job.check()
-
     def do_output(self):
         output = []
         while True:
@@ -141,27 +118,6 @@ class Plugin(object):
             else:
                 self.module.outputs = []
         return output
-
-class Job(object):
-    def __init__(self, interval, function):
-        self.function = function
-        self.interval = interval
-        self.lastrun = 0
-    def __str__(self):
-        return "{} {} {}".format(self.function, self.interval, self.lastrun)
-    def __repr__(self):
-        return self.__str__()
-    def check(self):
-        if self.lastrun + self.interval < time.time():
-            if not debug:
-                try:
-                    self.function()
-                except:
-                    dbg("problem")
-            else:
-                self.function()
-            self.lastrun = time.time()
-            pass
 
 class UnknownChannel(Exception):
     pass
