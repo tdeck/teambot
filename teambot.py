@@ -20,9 +20,6 @@ def setup(bot):
     my_user_id = slack_client.server.login_data['self']['id']
     my_mention = '<@{}>'.format(my_user_id)
 
-    for channel_id in directory.keys():
-        join_channel(channel_id)
-
 def process_message(data):
     # Ignore joins, leaves, typing notifications, etc... and messages from me
     if 'subtype' in data or data['user'] == my_user_id:
@@ -81,7 +78,7 @@ def handle_direct_message(dm_channel_id, data):
 
     else:
         if not in_channel(team_channel_id):
-            # TODO remove this garbage if Slack ever lets bots join channels
+            # TODO just join the channel if Slack ever allows it
             return send(
                 dm_channel_id,
                 'You must invite {} to <#{}> before you can manage team records.'.format(
@@ -95,7 +92,6 @@ def handle_direct_message(dm_channel_id, data):
                 return send(dm_channel_id, 'That team already exists.')
 
             directory[team_channel_id] = people
-            join_channel(team_channel_id)
             directory.sync()
 
             send(dm_channel_id, 'Team <#{}> created.'.format(team_channel_id))
@@ -172,9 +168,6 @@ def handle_channel_message(channel_id, data):
 def in_channel(channel_id):
     channel_info = slack_client.api_call('channels.info', channel=channel_id)
     return my_user_id in channel_info['channel']['members']
-
-def join_channel(channel_id):
-    pass # We can't join channels!
 
 def send(channel_id, message):
     outputs.append([channel_id, message])
