@@ -5,7 +5,7 @@ A bot to create per-channel notification lists in Slack.
 At Square, we have a lot of teams that make heavy use of slack. Each team owns a few different services, so people might hang around in the team's channel to get updates or ask questions. However, this makes it difficult to use @channel or @here to contact just your team.
 By setting up teambot as a bot whose name is "team", you can notify your team with @team.
 
-Teambot is my personal project. **We have been using it at Square for three months. At last count, 39 teams are using teambot.** Despite its simplicity, it has only broken once during a slack outage. I tend to just forget it's running.
+Teambot is my personal project. **We have been using it at Square for over a year. At last count, 90 different team channels are using teambot.** Despite its simplicity, it has only broken once during a slack outage. I tend to just forget it's running.
 
 Setting up the bot
 ------------------
