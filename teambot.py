@@ -54,7 +54,7 @@ def handle_direct_message(dm_channel_id, data):
         )
 
     # Accept messages of the form "command #channel [@user...]"
-    match = re.match('^(?P<cmd>\w+)\s+<#(?P<channel>C\w+)>(?P<people>(\s+<@U\w+>)*)$', text)
+    match = re.match('^(?P<cmd>\w+)\s+<#(?P<channel>C\w+)(\|.+?)?>(?P<people>(\s+<@U\w+(\|.+?)?>)*)$', text)
     if not match:
         send(dm_channel_id, "I didn't recognize that command.")
         send_help_text(dm_channel_id)
@@ -66,7 +66,7 @@ def handle_direct_message(dm_channel_id, data):
     team_channel_id = str(groups['channel'])
     people = set()
     if groups['people']:
-        people = set(re.findall('<@(\w+)>', groups['people']))
+        people = set(re.findall('<@(\w+)(?:\|.+?)?>', groups['people']))
 
     team_members = directory.get(team_channel_id)
 
@@ -170,7 +170,7 @@ def handle_channel_message(channel_id, data):
         )
 
 def in_channel(channel_id):
-    channel_info = slack_client.api_call('channels.info', channel=channel_id)
+    channel_info = json.loads(slack_client.api_call('channels.info', channel=channel_id))
     return my_user_id in channel_info['channel']['members']
 
 def mentions_me(message_text):
