@@ -4,7 +4,6 @@
 
 import shelve
 import re
-import json
 import atexit
 
 # This directory maps slack channel IDs (not names) to sets of user IDs
@@ -170,7 +169,7 @@ def handle_channel_message(channel_id, data):
         )
 
 def in_channel(channel_id):
-    channel_info = json.loads(slack_client.api_call('channels.info', channel=channel_id))
+    channel_info = slack_client.api_call('channels.info', channel=channel_id)
     return my_user_id in channel_info['channel']['members']
 
 def mentions_me(message_text):
