@@ -10,18 +10,15 @@ import atexit
 directory = shelve.open('teams.db')
 
 outputs = []
-my_name = None
 my_user_id = None
 slack_client = None
 
 def setup(bot):
-    global my_name
     global my_user_id
     global slack_client
     slack_client = bot.slack_client
 
     my_user_id = slack_client.server.login_data['self']['id']
-    my_name = slack_client.server.login_data['self']['name']
 
 def process_message(data):
     # Ignore joins, leaves, typing notifications, etc... and messages from me
@@ -175,10 +172,7 @@ def in_channel(channel_id):
 def mentions_me(message_text):
     # Some clients (i.e. slackbot) appear to format the mentions as
     # "<@USERID|username>" rather than "<@USERID>"
-    return (
-        '<@{}>'.format(my_user_id) in message_text or
-        ('<@{}|{}>'.format(my_user_id, my_name) in message_text)
-    )
+    return '<@{}'.format(my_user_id) in message_text
 
 def send(channel_id, message):
     outputs.append([channel_id, message])
