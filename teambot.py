@@ -7,17 +7,21 @@ import re
 import atexit
 
 # This directory maps slack channel IDs (not names) to sets of user IDs
-directory = shelve.open('teams.db')
+directory = None
 
 outputs = []
 my_user_id = None
 slack_client = None
 
-def setup(bot):
+def setup(bot, config):
     global my_user_id
     global slack_client
-    slack_client = bot.slack_client
+    global directory
 
+    dir_file = config.get('TEAM_DB_FILE') or 'teams.db'
+    directory = shelve.open(dir_file)
+
+    slack_client = bot.slack_client
     my_user_id = slack_client.server.login_data['self']['id']
 
 def process_message(data):
@@ -180,7 +184,11 @@ def send(channel_id, message):
 def send_help_text(channel_id):
     send(channel_id, HELP_TEXT)
 
-atexit.register(directory.close)
+def teardown():
+    if directory:
+        directory.close()
+
+atexit.register(teardown)
 
 HELP_TEXT = \
 '''Here are the commands I understand:
