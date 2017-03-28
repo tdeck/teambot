@@ -7,18 +7,31 @@
 import sys
 sys.dont_write_bytecode = True
 
-import glob
-import yaml
-import json
-import os
-import sys
-import time
+import daemon
 import logging
+import os
+import time
+import yaml
 from argparse import ArgumentParser
 
 from slackclient import SlackClient
 
 import teambot
+
+CONFIG_STRING_KEYS = [
+    'SLACK_TOKEN',
+    'LOGFILE',
+    'TEAM_DB_FILE',
+]
+
+CONFIG_FLAGS = [
+    'DEBUG',
+    'DAEMON',
+]
+
+# Globals used by rtmbot
+config = {}
+debug = False
 
 def dbg(debug_string):
     if debug:
@@ -66,10 +79,10 @@ class RtmBot(object):
             for output in plugin.do_output():
                 channel = self.slack_client.server.channels.find(output[0])
                 if channel != None and output[1] != None:
-                    if limiter == True:
+                    if limiter:
                         time.sleep(.1)
                         limiter = False
-                    message = output[1].encode('ascii','ignore')
+                    message = output[1].encode('ascii', 'ignore')
                     channel.send_message("{}".format(message))
                     limiter = True
 
@@ -83,15 +96,12 @@ class Plugin(object):
         self.name = name
 
         self.outputs = []
-        if name in config:
-            logging.info("config found for: " + name)
-            self.module.config = config[name]
         if 'setup' in dir(self.module):
-            self.module.setup(bot)
+            self.module.setup(bot, config)
 
     def do(self, function_name, data):
         if function_name in dir(self.module):
-            #this makes the plugin fail with stack trace in debug mode
+            # This makes the plugin fail with stack trace in debug mode
             if not debug:
                 try:
                     eval("self.module."+function_name)(data)
@@ -122,26 +132,24 @@ class Plugin(object):
 class UnknownChannel(Exception):
     pass
 
-
-def main_loop():
+def main_loop(bot, logfile=None):
     logging_conf = {
         'level': logging.INFO,
         'format': '%(levelname)s - %(filename)s:%(lineno)d - %(message)s',
         'handlers': [logging.StreamHandler()],
     }
-    if "LOGFILE" in config:
-        logging_conf.update({
-            'filename': config["LOGFILE"],
-        })
+
+    if logfile:
+        logging_conf['filename'] = logfile
+
     logging.basicConfig(**logging_conf)
-    logging.info(directory)
+
     try:
         bot.start()
     except KeyboardInterrupt:
         sys.exit(0)
     except:
         logging.exception('OOPS')
-
 
 def parse_args():
     parser = ArgumentParser()
@@ -153,26 +161,71 @@ def parse_args():
     )
     return parser.parse_args()
 
+def flag_is_true(flag_str):
+    """ Checks if a string flag should evaluate to True. """
+    flag_str = flag_str.strip().lower()
+    return flag_str == 'true' or flag_str == '1'
+
+def invoke():
+    """ Starts the bot. The entry point into the app. """
+    global config
+    global debug
+
+    args = parse_args()
+
+    # Try to load config from a specified file, or rtmbot.conf if
+    # it exists in the working directory.
+    using_file_config = False
+    if args.config:
+        using_file_config = True
+        config = yaml.load(file(args.config))
+    elif os.path.isfile('rtmbot.conf'):
+        using_file_config = True
+        config = yaml.load(file('rtmbot.conf'))
+
+    # Set or override values with config from the environment
+
+    # String values are copied over as-is
+    using_env_config = False
+    for k in CONFIG_STRING_KEYS:
+        if k in os.environ:
+            using_env_config = True
+            config[k] = os.environ[k]
+
+    # Sometimes you may want to use a config file and override things
+    # during development (e.g. DEBUG). However, this can also be a source
+    # of unexpected behavior, so we display a warning.
+    if using_file_config and using_env_config:
+        print(
+            "WARNING: You are using a mixture of configuration "
+            "from both the environment\n"
+            "and a config file. Check to ensure that this is "
+            "what you intend to do."
+        )
+
+    # Boolean flags are coerced by checking that they are some
+    # variant of the string "true"
+    for k in CONFIG_FLAGS:
+        if k in os.environ:
+            config[k] = flag_is_true(os.environ[k])
+
+    if 'SLACK_TOKEN' not in config:
+        print(
+            "Missing required config value SLACK_TOKEN."
+            " See README.md for details."
+        )
+        return
+
+    debug = config.get('DEBUG')
+    bot = RtmBot(config["SLACK_TOKEN"])
+    logfile = config.get('LOGFILE')
+
+    if config.get("DAEMON"):
+        with daemon.DaemonContext():
+            main_loop(bot, logfile)
+            return
+
+    main_loop(bot, logfile)
 
 if __name__ == "__main__":
-    args = parse_args()
-    directory = os.path.dirname(sys.argv[0])
-    if not directory.startswith('/'):
-        directory = os.path.abspath("{}/{}".format(os.getcwd(),
-                                directory
-                                ))
-
-    config = yaml.load(file(args.config or 'rtmbot.conf', 'r'))
-    debug = config["DEBUG"]
-    bot = RtmBot(config["SLACK_TOKEN"])
-    site_plugins = []
-    files_currently_downloading = []
-    job_hash = {}
-
-    if config.has_key("DAEMON"):
-        if config["DAEMON"]:
-            import daemon
-            with daemon.DaemonContext():
-                main_loop()
-    main_loop()
-
+    invoke()

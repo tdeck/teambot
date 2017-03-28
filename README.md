@@ -11,8 +11,7 @@ Setting up the bot
 ------------------
 Teambot requires Python and virtualenv.
 
-1.
-Install the bot and its dependencies:
+1. Install the bot and its dependencies:
 ```shell
 $ git clone https://github.com/tdeck/teambot.git
 $ cd teambot
@@ -21,8 +20,31 @@ $ . env/bin/activate
 $ pip install -r requirements.txt
 ```
 2. Obtain a token for your slack bot (see the [Slack documentation](https://api.slack.com/getting-started)). I recommend naming it "team".
-3. Create a configuration file. One simple way is to `cp rtmbot.conf.example rtmbot.conf`, then edit rtmbot.conf and replace `<your-token-here>` with the bot's token from your Slack dashboard.
+3. You can configure the bot in one of two ways:
+
+    i. Specify configuration in the environment. At a minimum, you'll need to set the env var `SLACK_TOKEN`. See the section below for more details.
+
+    ii. Provide a configuration file with the slack token. If the file `rtmbot.conf` is present in the working directory, teambot will use that. Or you can specify a different configuration file with the `--config` option. One simple way is to `cp rtmbot.conf.example rtmbot.conf`, then edit rtmbot.conf and replace `<your-token-here>` with the bot's token from your Slack dashboard.
+
 4. That's it. Start the bot with `python rtmbot.py`.
+
+*NOTE*: Teambot will store its directory in a file called `teams.db` in the working directory from which it was run. You can use a different path by providing it in `TEAM_DB_FILE`.
+
+More on configuration
+---------------------
+Teambot takes the following configuration options, either from the environment or from a configuration file. The configuration file is in YAML format, although for historical reasons its default name is "rtmbot.conf".
+
+`SLACK_TOKEN` (required) - The token used to connect to your Slack team.
+
+`DAEMON` (optional) - When true, teambot will run as a daemon in the background.
+
+`DEBUG` (optional) - When true, teambot will log more debugging information about what it's doing.
+
+`LOGFILE` (optional) - When logging debug details, teambot will log to this file if provided
+
+`TEAM_DB_FILE` (optional) - Teambot will persist its directory in this file. If absent, it will use `teams.db` in the working directory.
+
+If both the file and environment variables are present, the environment variables take precedence. Boolean flags `DAEMON` and `DEBUG` will should be set to the string `true` to enable them.
 
 Setting up a team
 -----------------
