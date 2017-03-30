@@ -1,7 +1,7 @@
 teambot
 =======
 
-[![Build Status](https://travis-ci.org/RyanBalfanz/teambot.svg?branch=settings-module-config)](https://travis-ci.org/RyanBalfanz/teambot)
+[![Build Status](https://travis-ci.org/tdeck/teambot.svg?branch=master)](https://travis-ci.org/tdeck/teambot)
 
 A bot to create per-channel notification lists in Slack.
 
