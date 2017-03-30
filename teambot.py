@@ -48,7 +48,7 @@ def handle_direct_message(dm_channel_id, data):
             "\n".join(
                 (
                     '<#{}>: {}'.format(channel, ' <@{}>' * len(team_members)).format(*team_members)
-                    for channel, team_members in directory.iteritems()
+                    for channel, team_members in directory.items()
                 )
             )
         )

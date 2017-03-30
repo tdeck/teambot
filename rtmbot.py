@@ -178,10 +178,10 @@ def invoke():
     using_file_config = False
     if args.config:
         using_file_config = True
-        config = yaml.load(file(args.config))
+        config = yaml.load(open(args.config))
     elif os.path.isfile('rtmbot.conf'):
         using_file_config = True
-        config = yaml.load(file('rtmbot.conf'))
+        config = yaml.load(open('rtmbot.conf'))
 
     # Set or override values with config from the environment
 
