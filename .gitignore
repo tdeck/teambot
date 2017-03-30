@@ -4,3 +4,4 @@ env
 *.db
 rtmbot.conf
 !.gitignore
+!.travis.yml

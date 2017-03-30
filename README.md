@@ -1,5 +1,8 @@
 teambot
 =======
+
+[![Build Status](https://travis-ci.org/RyanBalfanz/teambot.svg?branch=settings-module-config)](https://travis-ci.org/RyanBalfanz/teambot)
+
 A bot to create per-channel notification lists in Slack.
 
 At Square, we have a lot of teams that make heavy use of slack. Each team owns a few different services, so people might hang around in the team's channel to get updates or ask questions. However, this makes it difficult to use @channel or @here to contact just your team.
